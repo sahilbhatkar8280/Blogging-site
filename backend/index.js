@@ -25,6 +25,20 @@ mongoose.connect(MONGO).then(()=> console.log('MongoDB connected')).catch(err =>
 app.use('/api/auth', authRoutes);
 app.use('/api/blogs', blogRoutes);
 
-app.get('/', (req, res) => res.json({ ok: true }));
+// In development, expose a simple health route on '/'
+if (process.env.NODE_ENV !== 'production') {
+  app.get('/', (req, res) => res.json({ ok: true }));
+}
+
+// In production, serve the React build as static assets
+if (process.env.NODE_ENV === 'production') {
+  const frontendBuildPath = path.join(__dirname, '../frontend/build');
+  app.use(express.static(frontendBuildPath));
+
+  // Fallback to index.html for client-side routing
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(frontendBuildPath, 'index.html'));
+  });
+}
 
 app.listen(PORT, ()=> console.log('Server running on port', PORT));
